@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account - Blogverse</title>
+  <meta name="description" content="Join Blogverse today to share your knowledge, build an audience, and read engineering stories.">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar" id="site-header">
+    <div class="container">
+      <a href="index.html" class="nav-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-feather-pointed"></i>
+        </div>
+        <span>Blog<span class="text-gradient">verse</span></span>
+      </a>
+
+      <nav class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="create-blog.html" class="nav-link">Write</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle theme">
+          <i class="fa-solid fa-sun"></i>
+        </button>
+        <div id="nav-user-area"></div>
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content" style="display: flex; align-items: center; justify-content: center;">
+    <div class="container" style="max-width: 520px;">
+
+      <div class="form-card animate-fade-in" id="register-container">
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h1 style="font-size: 1.85rem; margin-bottom: 0.5rem;">Join the Community</h1>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">
+            Create your author profile and start sharing your ideas.
+          </p>
+        </div>
+
+        <!-- Error feedback banner -->
+        <div id="auth-error-alert" style="display: none; background: rgba(244, 63, 94, 0.15); border: 1px solid var(--accent-rose); color: var(--accent-rose); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.88rem; margin-bottom: 1.25rem;"></div>
+
+        <!-- Register Form -->
+        <form id="register-form">
+          <div class="form-group">
+            <label for="register-name" class="form-label">Full Name</label>
+            <div class="form-input-icon-wrapper">
+              <i class="fa-regular fa-user input-icon-left"></i>
+              <input 
+                type="text" 
+                id="register-name" 
+                class="form-input" 
+                placeholder="e.g. Jordan Lee" 
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-email" class="form-label">Email Address</label>
+            <div class="form-input-icon-wrapper">
+              <i class="fa-regular fa-envelope input-icon-left"></i>
+              <input 
+                type="email" 
+                id="register-email" 
+                class="form-input" 
+                placeholder="jordan@example.com" 
+                required
+              >
+            </div>
+          </div>
+
+          <!-- Avatar Selector -->
+          <div class="form-group">
+            <label class="form-label">Choose an Avatar</label>
+            <div class="avatar-selector">
+              <div class="avatar-opt selected" data-avatar="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="Avatar 1">
+              </div>
+              <div class="avatar-opt" data-avatar="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&q=80">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&q=80" alt="Avatar 2">
+              </div>
+              <div class="avatar-opt" data-avatar="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=160&q=80">
+                <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=160&q=80" alt="Avatar 3">
+              </div>
+              <div class="avatar-opt" data-avatar="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=160&q=80">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=160&q=80" alt="Avatar 4">
+              </div>
+              <div class="avatar-opt" data-avatar="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=80">
+                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=80" alt="Avatar 5">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-password" class="form-label">Password</label>
+            <div class="form-input-icon-wrapper">
+              <i class="fa-solid fa-lock input-icon-left"></i>
+              <input 
+                type="password" 
+                id="register-password" 
+                class="form-input" 
+                placeholder="At least 6 characters" 
+                required
+              >
+              <button type="button" class="input-toggle-btn" data-target="register-password" aria-label="Show password">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
+            <div class="strength-bar">
+              <div class="strength-indicator" id="strength-indicator"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-confirm" class="form-label">Confirm Password</label>
+            <div class="form-input-icon-wrapper">
+              <i class="fa-solid fa-shield-halved input-icon-left"></i>
+              <input 
+                type="password" 
+                id="register-confirm" 
+                class="form-input" 
+                placeholder="Repeat password" 
+                required
+              >
+              <button type="button" class="input-toggle-btn" data-target="register-confirm" aria-label="Show password">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 0.6rem;">
+            <input type="checkbox" id="register-terms" required style="margin-top: 0.25rem; accent-color: var(--primary);">
+            <label for="register-terms" style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">
+              I agree to the <a href="#" onclick="alert('Demo Terms: Have fun creating and learning!'); return false;">Terms of Service</a> and Privacy Policy.
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="register-submit-btn" style="width: 100%; padding: 0.75rem;">
+            <span>Create Account</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 2rem; font-size: 0.9rem; color: var(--text-muted);">
+          Already have an account? 
+          <a href="login.html" style="font-weight: 600;">Sign In</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Core Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/auth-ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator Studio - Blogverse</title>
+  <meta name="description" content="Write, edit, and publish technical articles with rich markdown formatting and live preview in Blogverse.">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar" id="site-header">
+    <div class="container">
+      <a href="index.html" class="nav-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-feather-pointed"></i>
+        </div>
+        <span>Blog<span class="text-gradient">verse</span></span>
+      </a>
+
+      <nav class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="create-blog.html" class="nav-link active">Write</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle theme">
+          <i class="fa-solid fa-sun"></i>
+        </button>
+        <div id="nav-user-area"></div>
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Studio Header Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge badge-cyan" style="margin-bottom: 0.4rem;">
+            <i class="fa-solid fa-pen-fancy"></i> Creator Studio
+          </span>
+          <h1 style="font-size: 2rem;" id="editor-page-title">Draft a New Story</h1>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" id="toggle-preview-layout-btn" title="Toggle Side-by-Side Live Preview">
+            <i class="fa-solid fa-columns"></i> Side-by-Side
+          </button>
+          <button type="button" class="btn btn-secondary" id="save-draft-btn">
+            <i class="fa-regular fa-bookmark"></i>
+            <span>Save Draft</span>
+          </button>
+          <button type="button" class="btn btn-primary" id="publish-btn">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Publish Article</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Editor Container (Split / Side-by-Side) -->
+      <div class="editor-container" id="editor-main-container">
+
+        <!-- Editor Form Column -->
+        <div class="form-card" style="padding: 2rem;">
+
+          <!-- Title Input -->
+          <div class="form-group">
+            <label for="post-title-input" class="form-label">Article Title *</label>
+            <input 
+              type="text" 
+              id="post-title-input" 
+              class="form-input" 
+              placeholder="e.g. Master Modern State Management with Vanilla JS" 
+              style="font-size: 1.15rem; font-weight: 700; padding: 0.85rem 1rem;"
+              required
+            >
+          </div>
+
+          <!-- Category & Excerpt Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="post-category-select" class="form-label">Category</label>
+              <select id="post-category-select" class="form-select">
+                <option value="Tech & AI">Tech & AI</option>
+                <option value="Web Dev">Web Dev</option>
+                <option value="Design Systems">Design Systems</option>
+                <option value="Productivity">Productivity</option>
+                <option value="Career">Career</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="tag-input-field" class="form-label">Tags (Hit Enter to add)</label>
+              <input 
+                type="text" 
+                id="tag-input-field" 
+                class="form-input" 
+                placeholder="e.g. JavaScript, CSS"
+              >
+            </div>
+          </div>
+
+          <!-- Tag Pills Display -->
+          <div class="tag-pills-container" id="tag-pills-list"></div>
+
+          <!-- Excerpt -->
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="post-excerpt-input" class="form-label">Short Summary / Excerpt</label>
+            <input 
+              type="text" 
+              id="post-excerpt-input" 
+              class="form-input" 
+              placeholder="A captivating 1-2 sentence hook for the article card..."
+            >
+          </div>
+
+          <!-- Cover Image URL & Presets -->
+          <div class="form-group">
+            <label for="post-cover-input" class="form-label">Cover Image URL</label>
+            <input 
+              type="url" 
+              id="post-cover-input" 
+              class="form-input" 
+              placeholder="https://images.unsplash.com/..."
+              value="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80"
+            >
+            <div style="margin-top: 0.5rem;">
+              <span style="font-size: 0.78rem; color: var(--text-dim); margin-right: 0.5rem;">Presets:</span>
+              <span id="cover-presets-container" style="display: inline-flex; flex-wrap: wrap; gap: 0.4rem;"></span>
+            </div>
+
+            <div class="cover-preview-box">
+              <img id="cover-preview-img" src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80" alt="Cover Preview" class="cover-preview-img">
+              <div id="cover-preview-placeholder" style="display: none; color: var(--text-dim); font-size: 0.9rem;">
+                Image Preview will display here
+              </div>
+            </div>
+          </div>
+
+          <!-- Markdown Content & Toolbar -->
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <label for="post-content-input" class="form-label" style="margin: 0;">Content (Markdown Supported) *</label>
+              <div style="display: flex; gap: 0.5rem;">
+                <span class="badge" id="word-count-badge">0 words</span>
+                <span class="badge badge-cyan" id="read-time-badge">1 min read</span>
+              </div>
+            </div>
+
+            <!-- Formatting Toolbar -->
+            <div class="editor-toolbar">
+              <button type="button" class="toolbar-btn" data-action="bold" title="Bold">
+                <i class="fa-solid fa-bold"></i>
+              </button>
+              <button type="button" class="toolbar-btn" data-action="italic" title="Italic">
+                <i class="fa-solid fa-italic"></i>
+              </button>
+              <button type="button" class="toolbar-btn" data-action="h2" title="Section Heading 2">
+                H2
+              </button>
+              <button type="button" class="toolbar-btn" data-action="h3" title="Subheading 3">
+                H3
+              </button>
+              <button type="button" class="toolbar-btn" data-action="quote" title="Quote">
+                <i class="fa-solid fa-quote-left"></i>
+              </button>
+              <button type="button" class="toolbar-btn" data-action="code" title="Code Block">
+                <i class="fa-solid fa-code"></i>
+              </button>
+              <button type="button" class="toolbar-btn" data-action="list" title="Bullet List">
+                <i class="fa-solid fa-list-ul"></i>
+              </button>
+              <button type="button" class="toolbar-btn" data-action="link" title="Insert Link">
+                <i class="fa-solid fa-link"></i>
+              </button>
+            </div>
+
+            <textarea 
+              id="post-content-input" 
+              class="form-textarea" 
+              rows="16" 
+              placeholder="Write your story here... You can use headings (##), bold (**text**), lists (- item), and code blocks (```)..."
+              required
+            ></textarea>
+          </div>
+
+        </div>
+
+        <!-- Real-Time Live Preview Pane -->
+        <div class="form-card" style="padding: 2.25rem; background: var(--bg-surface); position: sticky; top: calc(var(--nav-height) + 1.5rem);">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.85rem; margin-bottom: 1.5rem;">
+            <span class="badge badge-emerald">
+              <i class="fa-solid fa-eye"></i> Live Reader Preview
+            </span>
+            <span style="font-size: 0.8rem; color: var(--text-dim);">Updates as you type</span>
+          </div>
+
+          <h2 id="preview-title" style="font-size: 1.85rem; margin-bottom: 1.25rem;">Article Title Preview</h2>
+          
+          <div id="preview-body" class="article-body-container" style="font-size: 1rem; max-height: 600px; overflow-y: auto; padding-right: 0.5rem;">
+            <p style="color: var(--text-dim);">Start typing your content on the left to see your formatted article appear here.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Core Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/editor.js"></script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+/* ==========================================================================
+   BLOGVERSE - RESPONSIVE STYLESHEET (SWISS MODERNISM 2.0)
+   Verified breakpoints: 375px, 768px, 1024px, 1440px
+   Touch targets >= 44px, zero horizontal overflow, safe-area compliance
+   ========================================================================== */
+
+/* --- Desktop Widescreen (>= 1440px) --- */
+@media (min-width: 1440px) {
+  :root {
+    --container-max: 1360px;
+  }
+}
+
+/* --- Medium screens & Tablets (<= 1024px) --- */
+@media (max-width: 1024px) {
+  .featured-post-card {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .featured-img-wrap {
+    min-height: 260px;
+    max-height: 340px;
+  }
+
+  .featured-content {
+    padding: var(--space-xl);
+  }
+
+  .editor-container {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+  }
+}
+
+/* --- Mobile Breakpoint (<= 768px) --- */
+@media (max-width: 768px) {
+  :root {
+    --nav-height: 68px;
+    --container-padding: 1.15rem;
+  }
+
+  .hamburger-btn {
+    display: flex;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .theme-toggle-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: var(--nav-height);
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-lg);
+    gap: var(--space-md);
+    display: none;
+    box-shadow: var(--shadow-xl);
+    z-index: 999;
+  }
+
+  .nav-links.open {
+    display: flex;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .nav-link {
+    font-size: 1.05rem;
+    width: 100%;
+    padding: var(--space-sm) 0;
+  }
+
+  .hero-section {
+    padding: var(--space-xl) 0 var(--space-md) 0;
+  }
+
+  .hero-title {
+    font-size: 2.25rem;
+  }
+
+  .blog-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+  }
+
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dash-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .custom-table {
+    min-width: 620px;
+  }
+
+  .article-header {
+    text-align: left;
+  }
+
+  .article-author-bar {
+    justify-content: flex-start;
+  }
+
+  .article-actions-bar {
+    flex-direction: column;
+    gap: var(--space-md);
+    align-items: flex-start;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: var(--space-md);
+    text-align: center;
+  }
+}
+
+/* --- Compact Mobile (<= 375px) --- */
+@media (max-width: 375px) {
+  :root {
+    --container-padding: 0.85rem;
+  }
+
+  .hero-title {
+    font-size: 1.85rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .form-card {
+    padding: var(--space-md);
+  }
+
+  .modal-content {
+    padding: var(--space-md);
+  }
+
+  .user-pill-name {
+    display: none;
+  }
+
+  .toast {
+    min-width: calc(100vw - 2rem);
+  }
+
+  .search-shortcut-pill {
+    display: none;
+  }
+}

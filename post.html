@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Story - Blogverse</title>
+  <meta name="description" content="Read full technical article on Blogverse.">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar" id="site-header">
+    <div class="container">
+      <a href="index.html" class="nav-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-feather-pointed"></i>
+        </div>
+        <span>Blog<span class="text-gradient">verse</span></span>
+      </a>
+
+      <nav class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="create-blog.html" class="nav-link">Write</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle theme">
+          <i class="fa-solid fa-sun"></i>
+        </button>
+        <div id="nav-user-area"></div>
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Reading Progress Bar -->
+  <div class="reading-progress-bar" id="reading-progress"></div>
+
+  <main class="main-content" id="article-main-wrapper">
+    <div class="container">
+
+      <!-- Article Header -->
+      <header class="article-header">
+        <span class="badge badge-cyan" id="article-category-badge" style="margin-bottom: 1rem;">Tech</span>
+        <h1 class="article-title" id="article-title">Loading Article...</h1>
+        
+        <div class="article-author-bar">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="Author" class="author-thumb" id="article-author-avatar" style="width: 44px; height: 44px;">
+            <div style="text-align: left;">
+              <div id="article-author-name" style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">Author Name</div>
+              <div id="article-author-role" style="font-size: 0.8rem; color: var(--text-dim);">Senior Engineer</div>
+            </div>
+          </div>
+          <div style="color: var(--text-dim); font-size: 0.85rem;">
+            <span id="article-date">Published Date</span> • <span id="article-read-time">5 min read</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Cover Image -->
+      <div class="article-cover-wrap">
+        <img id="article-cover" src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80" alt="" class="article-cover-img">
+      </div>
+
+      <!-- Article Rich Body -->
+      <article class="article-body-container" id="article-body">
+        <!-- Markdown parsed content will be injected here -->
+      </article>
+
+      <!-- Interactive Actions Bar (Like, Bookmark, Share) -->
+      <div class="article-actions-bar">
+        <div class="action-buttons-group">
+          <button type="button" class="like-btn" id="post-like-btn" aria-label="Like story">
+            <i class="fa-regular fa-heart"></i>
+            <span id="post-like-count">0</span>
+          </button>
+          <button type="button" class="bookmark-btn" id="post-bookmark-btn" aria-label="Bookmark story">
+            <i class="fa-regular fa-bookmark"></i>
+            <span>Bookmark</span>
+          </button>
+        </div>
+
+        <div>
+          <button type="button" class="share-btn" id="post-share-btn" aria-label="Share article link">
+            <i class="fa-solid fa-share-nodes"></i>
+            <span>Share</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Author Bio Section -->
+      <div class="glass-panel" style="max-width: 780px; margin: 3rem auto; padding: 2rem; border-radius: var(--radius-xl); display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+        <img id="bio-author-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">
+        <div style="flex: 1; min-width: 240px;">
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.25rem;">
+            <h3 id="bio-author-name" style="font-size: 1.25rem;">Author Name</h3>
+            <span class="badge badge-emerald" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">Author</span>
+          </div>
+          <div id="bio-author-role" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; margin-bottom: 0.5rem;">Senior Software Engineer</div>
+          <p id="bio-author-desc" style="font-size: 0.92rem; color: var(--text-muted); margin: 0;">Passionate about frontend development, accessibility, and high-performance web systems.</p>
+        </div>
+      </div>
+
+      <!-- Comments Section -->
+      <section class="comments-section" id="comments-section">
+        <h3 class="comments-header">
+          <span>Discussion</span>
+          <span class="badge" id="comments-count-badge">0</span>
+        </h3>
+
+        <!-- Comment Form -->
+        <div class="form-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+          <form id="comment-form">
+            <div class="form-group" style="margin-bottom: 1rem;">
+              <textarea 
+                id="comment-text-input" 
+                class="form-textarea" 
+                rows="3" 
+                placeholder="Share your thoughts, perspectives, or questions on this article..."
+                required
+              ></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn btn-primary btn-sm" id="submit-comment-btn">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>Post Comment</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Comments List -->
+        <div class="comment-list" id="comments-list">
+          <!-- Comments injected dynamically by js/post.js -->
+        </div>
+      </section>
+
+      <!-- Related Stories Grid -->
+      <section style="max-width: 1000px; margin: 4.5rem auto 2rem auto;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem;">
+          <h3 style="font-size: 1.45rem;">Recommended Reading</h3>
+          <a href="index.html" style="font-size: 0.9rem; font-weight: 600;">View All &rarr;</a>
+        </div>
+        <div class="blog-grid" id="related-posts-grid">
+          <!-- Related posts injected dynamically -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <div>&copy; 2026 Blogverse Media. All rights reserved.</div>
+        <div>Engineered with pure HTML5, CSS3, & JavaScript.</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Core Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/post.js"></script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blogverse - Next-Gen Engineering, AI & Design Publications</title>
+  <meta name="description" content="Discover world-class stories, insights, and engineering deep dives on Web Development, Artificial Intelligence, Design Systems, and Tech Leadership.">
+  <meta name="keywords" content="blog, web development, javascript, css, ai, programming, design systems">
+  <meta name="author" content="Blogverse Media">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="navbar" id="site-header">
+    <div class="container">
+      <a href="index.html" class="nav-brand" id="brand-logo">
+        <div class="brand-icon">
+          <i class="fa-solid fa-feather-pointed"></i>
+        </div>
+        <span>Blog<span class="text-gradient">verse</span></span>
+      </a>
+
+      <!-- Desktop Links & Mobile Drawer -->
+      <nav class="nav-links" id="nav-links">
+        <a href="index.html" class="nav-link active" id="nav-home">Home</a>
+        <a href="dashboard.html" class="nav-link" id="nav-dashboard">Dashboard</a>
+        <a href="create-blog.html" class="nav-link" id="nav-create">Write</a>
+      </nav>
+
+      <!-- Action Items & Theme Toggle -->
+      <div class="nav-actions">
+        <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle light and dark theme">
+          <i class="fa-solid fa-sun"></i>
+        </button>
+        <div id="nav-user-area">
+          <!-- Populated dynamically by js/main.js -->
+        </div>
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle mobile menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-content" id="main-content">
+    <div class="container">
+
+      <!-- Hero Section -->
+      <section class="hero-section" id="hero-section">
+        <div class="badge badge-cyan hero-badge">
+          <i class="fa-solid fa-sparkles"></i> Curated Tech & Design Publication
+        </div>
+        <h1 class="hero-title">
+          Where <span class="text-gradient">Great Minds</span> Share Modern Ideas.
+        </h1>
+        <p class="hero-subtitle">
+          Explore architectural deep dives, AI innovations, UI/UX craft, and engineering philosophies written by developers, for developers.
+        </p>
+
+        <!-- Search Bar with keyboard shortcut hint -->
+        <div class="search-filter-bar">
+          <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+          <input 
+            type="search" 
+            id="search-input" 
+            class="search-input" 
+            placeholder="Search stories by topic, title, or author..."
+            aria-label="Search stories"
+          >
+          <span class="search-shortcut-pill" aria-hidden="true">⌘K</span>
+        </div>
+
+        <!-- Category Filter Carousel Tabs -->
+        <div class="category-tabs" id="category-tabs-container">
+          <!-- Populated by js/home.js -->
+        </div>
+      </section>
+
+      <!-- Highlighted Featured Post -->
+      <section id="featured-post-container">
+        <!-- Populated by js/home.js -->
+      </section>
+
+      <!-- Feed Header with Sorting Controls -->
+      <section class="feed-header" id="feed-header">
+        <div>
+          <h2 class="feed-title">Latest Publications</h2>
+          <div id="result-count" style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0.2rem;">
+            Loading articles...
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <label for="sort-select" style="font-size: 0.85rem; color: var(--text-muted);">Sort By:</label>
+          <select id="sort-select" class="sort-select">
+            <option value="latest">Latest First</option>
+            <option value="views">Most Viewed</option>
+            <option value="likes">Most Appreciated</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Responsive Articles Grid -->
+      <section class="blog-grid" id="blog-grid">
+        <!-- Rendered dynamically by js/home.js -->
+      </section>
+
+      <!-- Newsletter Subscription Banner -->
+      <section class="glass-panel" style="margin-top: 5rem; padding: 3rem 2rem; border-radius: var(--radius-xl); text-align: center; position: relative; overflow: hidden;" id="newsletter-section">
+        <div style="max-width: 600px; margin: 0 auto; position: relative; z-index: 2;">
+          <span class="badge badge-emerald" style="margin-bottom: 1rem;">
+            <i class="fa-solid fa-envelope-open-text"></i> Weekly Digest
+          </span>
+          <h2 style="font-size: 2rem; margin-bottom: 0.75rem;">Stay Ahead of the Engineering Curve</h2>
+          <p style="margin-bottom: 2rem; color: var(--text-muted);">
+            Join over 25,000 developers receiving our hand-crafted weekly briefings on software architecture, frontend trends, and AI tools.
+          </p>
+          <form id="newsletter-form" style="display: flex; gap: 0.75rem; max-width: 480px; margin: 0 auto; flex-wrap: wrap;">
+            <input 
+              type="email" 
+              id="newsletter-email" 
+              class="form-input" 
+              placeholder="Enter your work email address..." 
+              required
+              style="flex: 1; min-width: 220px;"
+            >
+            <button type="submit" class="btn btn-primary" id="newsletter-submit-btn">
+              <span>Subscribe</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </form>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer" id="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="index.html" class="nav-brand">
+            <div class="brand-icon">
+              <i class="fa-solid fa-feather-pointed"></i>
+            </div>
+            <span>Blog<span class="text-gradient">verse</span></span>
+          </a>
+          <p class="footer-desc">
+            An open platform for sharing technical knowledge, elegant design patterns, and engineering insights.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="index.html" class="footer-link">Home Feed</a></li>
+            <li><a href="dashboard.html" class="footer-link">Dashboard</a></li>
+            <li><a href="create-blog.html" class="footer-link">Create Post</a></li>
+            <li><a href="login.html" class="footer-link">Sign In</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">Categories</h4>
+          <ul class="footer-links">
+            <li><a href="index.html" class="footer-link">Tech & AI</a></li>
+            <li><a href="index.html" class="footer-link">Web Dev</a></li>
+            <li><a href="index.html" class="footer-link">Design Systems</a></li>
+            <li><a href="index.html" class="footer-link">Productivity</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">Connect</h4>
+          <p style="font-size: 0.88rem; color: var(--text-dim); margin-bottom: 1rem;">
+            Built with pure HTML5, modern CSS3, and ES6 JavaScript.
+          </p>
+          <div style="display: flex; gap: 0.75rem;">
+            <a href="https://github.com" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" aria-label="GitHub">
+              <i class="fa-brands fa-github"></i>
+            </a>
+            <a href="https://twitter.com" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" aria-label="Twitter">
+              <i class="fa-brands fa-x-twitter"></i>
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" aria-label="LinkedIn">
+              <i class="fa-brands fa-linkedin-in"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 Blogverse Publications. All rights reserved.</div>
+        <div>Engineered with pride for modern developers.</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Core Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

@@ -1,7 +1,8 @@
 /**
  * ==========================================================================
  * BLOGVERSE - AUTHENTICATION UI CONTROLLER
- * Form validation, password visibility toggle, avatar picker & demo login
+ * Form validation, password visibility toggle, avatar picker & demo login.
+ * Updated to use async API calls instead of synchronous localStorage auth.
  * ==========================================================================
  */
 
@@ -34,12 +35,21 @@ function initPasswordToggles() {
 function initDemoLogin() {
   const demoBtns = document.querySelectorAll(".demo-login-btn");
   demoBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const user = auth.loginAsDemo();
-      showToast(`Welcome back, ${user.name}!`, "success");
-      setTimeout(() => {
-        window.location.href = "dashboard.html";
-      }, 700);
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.textContent = "Signing in...";
+
+      try {
+        const res = await auth.loginAsDemo();
+        showToast(`Welcome back, ${res.user.name}!`, "success");
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 700);
+      } catch (error) {
+        showToast(error.message || "Demo login failed. Please try again.", "error");
+        btn.disabled = false;
+        btn.textContent = "1-Click Demo Login";
+      }
     });
   });
 }
@@ -48,11 +58,12 @@ function initLoginForm() {
   const form = document.getElementById("login-form");
   if (!form) return;
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const emailInput = document.getElementById("login-email");
     const passwordInput = document.getElementById("login-password");
     const errorAlert = document.getElementById("auth-error-alert");
+    const submitBtn = form.querySelector("[type=submit]");
 
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
@@ -62,16 +73,22 @@ function initLoginForm() {
       return;
     }
 
-    const res = auth.login(email, password);
-    if (!res.success) {
-      showError(errorAlert, res.message);
-      return;
-    }
+    // Show loading state
+    submitBtn.disabled = true;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Signing in...';
 
-    showToast(`Welcome back, ${res.user.name}!`, "success");
-    setTimeout(() => {
-      window.location.href = "dashboard.html";
-    }, 700);
+    try {
+      const res = await auth.login(email, password);
+      showToast(`Welcome back, ${res.user.name}!`, "success");
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 700);
+    } catch (error) {
+      showError(errorAlert, error.message || "Login failed. Please try again.");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
   });
 }
 
@@ -91,7 +108,7 @@ function initRegisterForm() {
     });
   });
 
-  // Password strength
+  // Password strength indicator
   const passInput = document.getElementById("register-password");
   const strengthIndicator = document.getElementById("strength-indicator");
 
@@ -115,7 +132,7 @@ function initRegisterForm() {
     });
   }
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const nameInput = document.getElementById("register-name");
     const emailInput = document.getElementById("register-email");
@@ -123,6 +140,7 @@ function initRegisterForm() {
     const confirmInput = document.getElementById("register-confirm");
     const termsInput = document.getElementById("register-terms");
     const errorAlert = document.getElementById("auth-error-alert");
+    const submitBtn = form.querySelector("[type=submit]");
 
     const name = nameInput.value.trim();
     const email = emailInput.value.trim();
@@ -149,22 +167,29 @@ function initRegisterForm() {
       return;
     }
 
-    const res = auth.register({
-      name,
-      email,
-      avatar: selectedAvatar,
-      role: "Writer & Developer"
-    });
+    // Show loading state
+    submitBtn.disabled = true;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Creating account...';
 
-    if (!res.success) {
-      showError(errorAlert, res.message);
-      return;
+    try {
+      const res = await auth.register({
+        name,
+        email,
+        password,
+        avatar: selectedAvatar,
+        role: "Writer & Developer",
+      });
+
+      showToast("Account created successfully! Welcome to Blogverse.", "success");
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 700);
+    } catch (error) {
+      showError(errorAlert, error.message || "Registration failed. Please try again.");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
     }
-
-    showToast("Account created successfully! Welcome to Blogverse.", "success");
-    setTimeout(() => {
-      window.location.href = "dashboard.html";
-    }, 700);
   });
 }
 

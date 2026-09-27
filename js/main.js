@@ -12,8 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* --- Theme Management --- */
+const THEME_KEY = "blogverse_theme";
+
 function initTheme() {
-  const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || "dark";
+  const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
   document.documentElement.setAttribute("data-theme", savedTheme);
   updateThemeToggleIcons(savedTheme);
 
@@ -23,7 +25,7 @@ function initTheme() {
       const current = document.documentElement.getAttribute("data-theme");
       const nextTheme = current === "light" ? "dark" : "light";
       document.documentElement.setAttribute("data-theme", nextTheme);
-      localStorage.setItem(STORAGE_KEYS.THEME, nextTheme);
+      localStorage.setItem(THEME_KEY, nextTheme);
       updateThemeToggleIcons(nextTheme);
       showToast(`Switched to ${nextTheme} mode`, "info");
     });
@@ -42,7 +44,7 @@ function updateThemeToggleIcons(theme) {
 
 /* --- Dynamic Navigation & User Dropdown --- */
 function initNavigation() {
-  const user = auth.getCurrentUser();
+  const user = api.auth.getCurrentUser();
   const navActions = document.getElementById("nav-user-area");
   const mobileNavLinks = document.getElementById("nav-links");
   const hamburgerBtn = document.getElementById("hamburger-btn");
@@ -124,7 +126,7 @@ function initNavigation() {
       const logoutBtn = document.getElementById("nav-logout-btn");
       if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
-          auth.logout();
+          api.auth.logout();
           showToast("Signed out successfully", "info");
           setTimeout(() => {
             window.location.href = "index.html";

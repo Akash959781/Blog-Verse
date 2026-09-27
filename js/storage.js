@@ -1,174 +1,260 @@
 /**
  * ==========================================================================
- * BLOGVERSE - LOCAL STORAGE DATA MANAGER
- * Synchronous client-side persistence for blogs, comments, likes & bookmarks
+ * BLOGVERSE - SMART HYBRID STORAGE MANAGER
+ * Primary: Real REST API via api.js
+ * Fallback: LocalStorage & SEED_POSTS if backend server is unreachable
+ * This ensures the user NEVER encounters a blocking network error screen!
  * ==========================================================================
  */
 
 const STORAGE_KEYS = {
   POSTS: "blogverse_posts",
+  THEME: "blogverse_theme",
   BOOKMARKS: "blogverse_bookmarks",
   LIKES: "blogverse_likes",
-  THEME: "blogverse_theme"
 };
 
-class StorageManager {
-  constructor() {
-    this.initStorage();
-  }
+const storage = {
+  _isOnline: null,
 
-  initStorage() {
-    if (!localStorage.getItem(STORAGE_KEYS.POSTS)) {
-      localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(SEED_POSTS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.BOOKMARKS)) {
-      localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify([]));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.LIKES)) {
-      localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify([]));
-    }
-  }
-
-  // Get all posts
-  getAllPosts() {
+  /** Check if the backend API is alive */
+  async checkConnection() {
     try {
-      const posts = localStorage.getItem(STORAGE_KEYS.POSTS);
-      return posts ? JSON.parse(posts) : [];
-    } catch (e) {
-      console.error("Error reading posts from storage:", e);
-      return [];
+      const res = await fetch(`${window.API_BASE_URL || "http://localhost:5000"}/api/health`, {
+        signal: AbortSignal.timeout(2000),
+      });
+      this._isOnline = res.ok;
+      return res.ok;
+    } catch {
+      this._isOnline = false;
+      return false;
     }
-  }
+  },
 
-  // Get a single post by id
-  getPostById(id) {
-    const posts = this.getAllPosts();
-    return posts.find(p => p.id === id) || null;
-  }
+  // ── Local Fallback Helpers ────────────────────────────────────────────────
+  _getSeedPosts() {
+    return typeof window.SEED_POSTS !== "undefined" ? [...window.SEED_POSTS] : [];
+  },
 
-  // Save new post
-  createPost(newPost) {
-    const posts = this.getAllPosts();
-    const postWithDefaults = {
-      id: "post-" + Date.now(),
-      views: 1,
-      likes: 0,
-      comments: [],
-      publishedDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      status: newPost.status || "published",
-      isFeatured: false,
-      ...newPost
-    };
-    posts.unshift(postWithDefaults);
-    localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-    return postWithDefaults;
-  }
+  getLocalPosts(params = {}) {
+    let posts = [];
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.POSTS);
+      posts = stored ? JSON.parse(stored) : this._getSeedPosts();
+    } catch {
+      posts = this._getSeedPosts();
+    }
 
-  // Update existing post
-  updatePost(id, updatedFields) {
-    const posts = this.getAllPosts();
-    const index = posts.findIndex(p => p.id === id);
-    if (index === -1) return null;
+    // Apply filtering
+    if (params.category && params.category !== "All") {
+      posts = posts.filter((p) => p.category === params.category);
+    }
+    if (params.search) {
+      const q = params.search.toLowerCase();
+      posts = posts.filter(
+        (p) =>
+          (p.title && p.title.toLowerCase().includes(q)) ||
+          (p.excerpt && p.excerpt.toLowerCase().includes(q)) ||
+          (p.content && p.content.toLowerCase().includes(q))
+      );
+    }
+    if (params.author) {
+      posts = posts.filter((p) => {
+        const aId = p.author?.id || p.author?._id || p.author;
+        return aId === params.author;
+      });
+    }
 
-    posts[index] = { ...posts[index], ...updatedFields };
-    localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-    return posts[index];
-  }
+    // Apply sorting
+    if (params.sort === "mostViewed" || params.sort === "views") {
+      posts.sort((a, b) => (b.views || 0) - (a.views || 0));
+    } else if (params.sort === "mostLiked" || params.sort === "likes") {
+      posts.sort((a, b) => ((b.likes || []).length || 0) - ((a.likes || []).length || 0));
+    }
 
-  // Delete post
-  deletePost(id) {
-    let posts = this.getAllPosts();
-    posts = posts.filter(p => p.id !== id);
-    localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-    return true;
-  }
+    return posts;
+  },
 
-  // Increment view count
-  incrementView(id) {
-    const posts = this.getAllPosts();
-    const post = posts.find(p => p.id === id);
-    if (post) {
-      post.views = (post.views || 0) + 1;
+  saveLocalPosts(posts) {
+    try {
       localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
+    } catch (e) {
+      console.warn("localStorage quota exceeded or unavailable", e);
     }
-  }
+  },
 
-  // Toggle Like
-  toggleLike(postId, userId = "guest") {
-    const posts = this.getAllPosts();
-    const post = posts.find(p => p.id === postId);
-    if (!post) return { liked: false, count: 0 };
+  getLocalPostById(id) {
+    const posts = this.getLocalPosts();
+    return posts.find((p) => (p._id || p.id) === id) || null;
+  },
 
-    let userLikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || "[]");
-    const likeKey = `${userId}_${postId}`;
-    const alreadyLiked = userLikes.includes(likeKey);
-
-    if (alreadyLiked) {
-      userLikes = userLikes.filter(k => k !== likeKey);
-      post.likes = Math.max(0, (post.likes || 1) - 1);
-    } else {
-      userLikes.push(likeKey);
-      post.likes = (post.likes || 0) + 1;
-    }
-
-    localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(userLikes));
-    localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-
-    return { liked: !alreadyLiked, count: post.likes };
-  }
-
-  isPostLiked(postId, userId = "guest") {
-    const userLikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES) || "[]");
-    return userLikes.includes(`${userId}_${postId}`);
-  }
-
-  // Add Comment
-  addComment(postId, commentData) {
-    const posts = this.getAllPosts();
-    const post = posts.find(p => p.id === postId);
-    if (!post) return null;
-
-    const comment = {
-      id: "c-" + Date.now(),
-      userName: commentData.userName || "Anonymous Reader",
-      userAvatar: commentData.userAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      text: commentData.text
+  createLocalPost(postData) {
+    const posts = this.getLocalPosts();
+    const currentUser = api.auth.getCurrentUser() || {
+      id: "demo-user",
+      name: "Demo Creator",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80",
+      role: "Writer",
     };
 
-    if (!post.comments) post.comments = [];
-    post.comments.push(comment);
-    localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-    return comment;
-  }
+    const newPost = {
+      ...postData,
+      _id: "local-" + Date.now(),
+      id: "local-" + Date.now(),
+      author: currentUser,
+      publishedDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      views: 1,
+      likes: [],
+      comments: [],
+    };
 
-  // Toggle Bookmark
-  toggleBookmark(postId, userId = "guest") {
-    let bookmarks = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKMARKS) || "[]");
-    const itemKey = `${userId}_${postId}`;
-    const isBookmarked = bookmarks.includes(itemKey);
+    posts.unshift(newPost);
+    this.saveLocalPosts(posts);
+    return newPost;
+  },
 
-    if (isBookmarked) {
-      bookmarks = bookmarks.filter(k => k !== itemKey);
-    } else {
-      bookmarks.push(itemKey);
+  // ── Public Unified API ────────────────────────────────────────────────────
+  /** Get all published posts */
+  async getAllPosts(params = {}) {
+    try {
+      const res = await api.posts.getAll(params);
+      if (res && res.posts) {
+        // Cache posts locally for fast offline access
+        this.saveLocalPosts(res.posts);
+        return res.posts;
+      }
+    } catch (error) {
+      console.warn("Backend API unavailable. Falling back to local offline storage:", error.message);
     }
+    return this.getLocalPosts(params);
+  },
 
-    localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
-    return !isBookmarked;
-  }
+  /** Get a single post by ID */
+  async getPostById(id) {
+    try {
+      const res = await api.posts.getById(id);
+      if (res && res.post) return res.post;
+    } catch (error) {
+      console.warn("Backend API unavailable for post lookup. Falling back to local store:", error.message);
+    }
+    return this.getLocalPostById(id);
+  },
 
-  isPostBookmarked(postId, userId = "guest") {
-    const bookmarks = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKMARKS) || "[]");
-    return bookmarks.includes(`${userId}_${postId}`);
-  }
+  /** Create a new post */
+  async createPost(postData) {
+    try {
+      const res = await api.posts.create(postData);
+      if (res && res.post) return res.post;
+    } catch (error) {
+      console.warn("Backend API unavailable for creating post. Saving locally:", error.message);
+    }
+    return this.createLocalPost(postData);
+  },
 
-  // Get posts authored by a user
-  getPostsByAuthor(authorId) {
-    const posts = this.getAllPosts();
-    return posts.filter(p => p.author && p.author.id === authorId);
-  }
-}
+  /** Update an existing post */
+  async updatePost(id, postData) {
+    try {
+      const res = await api.posts.update(id, postData);
+      if (res && res.post) return res.post;
+    } catch (error) {
+      console.warn("Backend API unavailable for update. Updating locally:", error.message);
+    }
+    const posts = this.getLocalPosts();
+    const idx = posts.findIndex((p) => (p._id || p.id) === id);
+    if (idx !== -1) {
+      posts[idx] = { ...posts[idx], ...postData };
+      this.saveLocalPosts(posts);
+      return posts[idx];
+    }
+    return null;
+  },
 
-// Global instance
-const storage = new StorageManager();
+  /** Delete a post */
+  async deletePost(id) {
+    try {
+      await api.posts.delete(id);
+    } catch (error) {
+      console.warn("Backend API unavailable for delete. Deleting locally:", error.message);
+    }
+    const posts = this.getLocalPosts().filter((p) => (p._id || p.id) !== id);
+    this.saveLocalPosts(posts);
+    return true;
+  },
+
+  /** Toggle like — returns { liked, likesCount } */
+  async toggleLike(postId) {
+    try {
+      return await api.posts.toggleLike(postId);
+    } catch (error) {
+      console.warn("Backend API unavailable for like. Toggling locally:", error.message);
+      const post = this.getLocalPostById(postId);
+      if (!post) return { liked: false, likesCount: 0 };
+      post.likes = post.likes || [];
+      const liked = post.likes.length === 0;
+      if (liked) post.likes.push("local-user");
+      else post.likes.pop();
+      this.updatePost(postId, post);
+      return { liked, likesCount: post.likes.length };
+    }
+  },
+
+  /** Toggle bookmark — returns { bookmarked, bookmarksCount } */
+  async toggleBookmark(postId) {
+    try {
+      return await api.posts.toggleBookmark(postId);
+    } catch (error) {
+      console.warn("Backend API unavailable for bookmark. Toggling locally:", error.message);
+      let bookmarks = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKMARKS) || "[]");
+      const idx = bookmarks.indexOf(postId);
+      let bookmarked = false;
+      if (idx === -1) {
+        bookmarks.push(postId);
+        bookmarked = true;
+      } else {
+        bookmarks.splice(idx, 1);
+      }
+      localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
+      return { bookmarked, bookmarksCount: bookmarks.length };
+    }
+  },
+
+  /** Add a comment to a post */
+  async addComment(postId, commentData) {
+    try {
+      const res = await api.posts.addComment(postId, commentData.text);
+      if (res && res.comment) return res.comment;
+    } catch (error) {
+      console.warn("Backend API unavailable for comment. Adding locally:", error.message);
+    }
+    const currentUser = api.auth.getCurrentUser() || { name: "Reader", avatar: "" };
+    const comment = {
+      _id: "comment-" + Date.now(),
+      userName: currentUser.name,
+      userAvatar: currentUser.avatar,
+      text: commentData.text,
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    };
+    const post = this.getLocalPostById(postId);
+    if (post) {
+      post.comments = post.comments || [];
+      post.comments.push(comment);
+      this.updatePost(postId, post);
+    }
+    return comment;
+  },
+
+  /** Get posts by author ID */
+  async getPostsByAuthor(authorId) {
+    try {
+      const res = await api.posts.getAll({ author: authorId });
+      if (res && res.posts) return res.posts;
+    } catch {
+      // Fallback
+    }
+    return this.getLocalPosts({ author: authorId });
+  },
+};
+
+// Expose globally
+window.storage = storage;
+window.STORAGE_KEYS = STORAGE_KEYS;

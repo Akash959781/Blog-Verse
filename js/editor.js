@@ -1,7 +1,8 @@
 /**
  * ==========================================================================
  * BLOGVERSE - BLOG POST STUDIO & EDITOR CONTROLLER
- * Form validation, formatting toolbar, live markdown preview, cover presets
+ * Form validation, formatting toolbar, live markdown preview, cover presets.
+ * Updated to use async API calls.
  * ==========================================================================
  */
 
@@ -17,51 +18,60 @@ const PRESET_COVERS = [
   { label: "Collaboration", url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80" }
 ];
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   initUserSession();
   initEditor();
   initCoverPresets();
   initTagInput();
   initToolbar();
   initPreviewToggle();
-  checkEditMode();
+  await checkEditMode();
 });
 
 function initUserSession() {
-  if (!auth.isAuthenticated()) {
-    auth.loginAsDemo();
+  if (!api.auth.isAuthenticated()) {
+    // Redirect to login if not authenticated
+    showToast("Please sign in to create articles.", "info");
+    setTimeout(() => { window.location.href = "login.html"; }, 1000);
   }
 }
 
-function checkEditMode() {
+async function checkEditMode() {
   const params = new URLSearchParams(window.location.search);
   const editId = params.get("edit");
   if (!editId) return;
 
-  const post = storage.getPostById(editId);
-  if (!post) {
-    showToast("Article not found for editing", "error");
-    return;
+  try {
+    const res = await api.posts.getById(editId);
+    const post = res.post;
+    if (!post) {
+      showToast("Article not found for editing", "error");
+      return;
+    }
+
+    isEditMode = true;
+    editingPostId = editId;
+
+    const editorTitle = document.getElementById("editor-page-title");
+    if (editorTitle) editorTitle.textContent = "Edit Article";
+    document.getElementById("post-title-input").value = post.title;
+    document.getElementById("post-category-select").value = post.category;
+    document.getElementById("post-excerpt-input").value = post.excerpt;
+    document.getElementById("post-cover-input").value = post.coverImage;
+    document.getElementById("post-content-input").value = post.content;
+
+    if (post.tags && Array.isArray(post.tags)) {
+      postTags = [...post.tags];
+      renderTags();
+    }
+
+    updateCoverPreview(post.coverImage);
+    updateWordCount();
+    updateLivePreview();
+
+  } catch (error) {
+    showToast("Failed to load article for editing.", "error");
   }
-
-  isEditMode = true;
-  editingPostId = editId;
-
-  document.getElementById("editor-page-title").textContent = "Edit Article";
-  document.getElementById("post-title-input").value = post.title;
-  document.getElementById("post-category-select").value = post.category;
-  document.getElementById("post-excerpt-input").value = post.excerpt;
-  document.getElementById("post-cover-input").value = post.coverImage;
-  document.getElementById("post-content-input").value = post.content;
-
-  if (post.tags && Array.isArray(post.tags)) {
-    postTags = [...post.tags];
-    renderTags();
-  }
-
-  updateCoverPreview(post.coverImage);
-  updateWordCount();
-  updateLivePreview();
 }
 
 function initEditor() {
@@ -86,14 +96,12 @@ function initEditor() {
     });
   }
 
-  // Publish / Draft buttons
   const publishBtn = document.getElementById("publish-btn");
   const draftBtn = document.getElementById("save-draft-btn");
 
   if (publishBtn) {
     publishBtn.addEventListener("click", () => handleSavePost("published"));
   }
-
   if (draftBtn) {
     draftBtn.addEventListener("click", () => handleSavePost("draft"));
   }
@@ -188,32 +196,15 @@ function insertFormatting(textarea, action) {
   let replacement = "";
 
   switch (action) {
-    case "bold":
-      replacement = `**${selected || "bold text"}**`;
-      break;
-    case "italic":
-      replacement = `*${selected || "italic text"}*`;
-      break;
-    case "h2":
-      replacement = `\n## ${selected || "Section Heading"}\n`;
-      break;
-    case "h3":
-      replacement = `\n### ${selected || "Subheading"}\n`;
-      break;
-    case "quote":
-      replacement = `\n> ${selected || "Inspiring quote here"}\n`;
-      break;
-    case "code":
-      replacement = `\n\`\`\`javascript\n${selected || "// Code snippet here"}\n\`\`\`\n`;
-      break;
-    case "list":
-      replacement = `\n- ${selected || "Key takeaway point"}\n`;
-      break;
-    case "link":
-      replacement = `[${selected || "Link text"}](https://example.com)`;
-      break;
-    default:
-      return;
+    case "bold":    replacement = `**${selected || "bold text"}**`; break;
+    case "italic":  replacement = `*${selected || "italic text"}*`; break;
+    case "h2":      replacement = `\n## ${selected || "Section Heading"}\n`; break;
+    case "h3":      replacement = `\n### ${selected || "Subheading"}\n`; break;
+    case "quote":   replacement = `\n> ${selected || "Inspiring quote here"}\n`; break;
+    case "code":    replacement = `\n\`\`\`javascript\n${selected || "// Code snippet here"}\n\`\`\`\n`; break;
+    case "list":    replacement = `\n- ${selected || "Key takeaway point"}\n`; break;
+    case "link":    replacement = `[${selected || "Link text"}](https://example.com)`; break;
+    default: return;
   }
 
   textarea.setRangeText(replacement, start, end, "end");
@@ -240,7 +231,7 @@ function initPreviewToggle() {
     toggleBtn.addEventListener("click", () => {
       container.classList.toggle("single-pane");
       const isSplit = !container.classList.contains("single-pane");
-      toggleBtn.innerHTML = isSplit 
+      toggleBtn.innerHTML = isSplit
         ? '<i class="fa-solid fa-columns"></i> Side-by-Side'
         : '<i class="fa-regular fa-square"></i> Full Width';
     });
@@ -250,7 +241,7 @@ function initPreviewToggle() {
 function updateLivePreview() {
   const title = document.getElementById("post-title-input").value || "Article Title Preview";
   const content = document.getElementById("post-content-input").value || "Your formatted content will appear here in real time...";
-  
+
   const previewTitle = document.getElementById("preview-title");
   const previewBody = document.getElementById("preview-body");
 
@@ -262,36 +253,24 @@ function updateLivePreview() {
 function simpleMarkdownToHtml(markdown) {
   if (!markdown) return "";
   let html = markdown
-    // Escape HTML tags to prevent XSS
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-  // Code blocks
   html = html.replace(/```([a-z]*)\n([\s\S]*?)```/g, (match, lang, code) => {
     return `<pre><code>${code.trim()}</code></pre>`;
   });
 
-  // Blockquotes
-  html = html.replace(/^&gt; (.*$)/gim, '<blockquote>$1</blockquote>');
-
-  // Headings
-  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-
-  // Bold & Italic
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-  // Links
+  html = html.replace(/^&gt; (.*$)/gim, "<blockquote>$1</blockquote>");
+  html = html.replace(/^### (.*$)/gim, "<h3>$1</h3>");
+  html = html.replace(/^## (.*$)/gim, "<h2>$1</h2>");
+  html = html.replace(/^# (.*$)/gim, "<h1>$1</h1>");
+  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
   html = html.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  html = html.replace(/^\- (.*$)/gim, "<li>$1</li>");
+  html = html.replace(/(<li>.*<\/li>)/gim, "<ul>$1</ul>");
 
-  // Unordered list items
-  html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
-  html = html.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>');
-
-  // Paragraphs
   html = html.split(/\n{2,}/).map(para => {
     if (para.startsWith("<h") || para.startsWith("<blockquote") || para.startsWith("<pre") || para.startsWith("<ul")) {
       return para;
@@ -302,30 +281,25 @@ function simpleMarkdownToHtml(markdown) {
   return html;
 }
 
-function handleSavePost(status = "published") {
+async function handleSavePost(status = "published") {
   const title = document.getElementById("post-title-input").value.trim();
   const category = document.getElementById("post-category-select").value;
   const excerpt = document.getElementById("post-excerpt-input").value.trim();
   let coverImage = document.getElementById("post-cover-input").value.trim();
   const content = document.getElementById("post-content-input").value.trim();
 
-  if (!title) {
-    showToast("Please provide a title for your article.", "error");
-    return;
-  }
+  if (!title) { showToast("Please provide a title for your article.", "error"); return; }
+  if (!content) { showToast("Article content cannot be empty.", "error"); return; }
+  if (!coverImage) { coverImage = PRESET_COVERS[0].url; }
 
-  if (!content) {
-    showToast("Article content cannot be empty.", "error");
-    return;
-  }
+  const publishBtn = document.getElementById("publish-btn");
+  const draftBtn = document.getElementById("save-draft-btn");
+  const activeBtn = status === "published" ? publishBtn : draftBtn;
 
-  if (!coverImage) {
-    coverImage = PRESET_COVERS[0].url;
+  if (activeBtn) {
+    activeBtn.disabled = true;
+    activeBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
   }
-
-  const words = content.split(/\s+/).length;
-  const readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
-  const currentUser = auth.getCurrentUser();
 
   const postData = {
     title,
@@ -334,24 +308,34 @@ function handleSavePost(status = "published") {
     excerpt: excerpt || content.substring(0, 140) + "...",
     coverImage,
     content,
-    readTime,
     status,
-    author: currentUser
   };
 
-  if (isEditMode) {
-    const updated = storage.updatePost(editingPostId, postData);
-    if (updated) {
-      showToast(status === "draft" ? "Draft updated!" : "Article published successfully!", "success");
-      setTimeout(() => {
-        window.location.href = `post.html?id=${editingPostId}`;
-      }, 700);
+  try {
+    if (isEditMode) {
+      const updated = await storage.updatePost(editingPostId, postData);
+      if (updated) {
+        showToast(status === "draft" ? "Draft updated!" : "Article published successfully!", "success");
+        setTimeout(() => {
+          window.location.href = `post.html?id=${editingPostId}`;
+        }, 700);
+      }
+    } else {
+      const created = await storage.createPost(postData);
+      if (created) {
+        showToast(status === "draft" ? "Saved as draft!" : "Article published successfully!", "success");
+        setTimeout(() => {
+          window.location.href = `post.html?id=${created._id}`;
+        }, 700);
+      }
     }
-  } else {
-    const created = storage.createPost(postData);
-    showToast(status === "draft" ? "Saved as draft!" : "Article published successfully!", "success");
-    setTimeout(() => {
-      window.location.href = `post.html?id=${created.id}`;
-    }, 700);
+  } catch (error) {
+    showToast(error.message || "Failed to save article. Please try again.", "error");
+    if (activeBtn) {
+      activeBtn.disabled = false;
+      activeBtn.innerHTML = status === "published"
+        ? '<i class="fa-solid fa-paper-plane"></i> Publish Article'
+        : '<i class="fa-regular fa-floppy-disk"></i> Save Draft';
+    }
   }
 }

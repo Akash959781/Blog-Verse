@@ -1,94 +1,133 @@
 /**
  * ==========================================================================
- * BLOGVERSE - AUTHENTICATION & SESSION MANAGER
- * Manages user accounts, demo logins, registration, and active sessions
+ * BLOGVERSE - AUTHENTICATION & SESSION MANAGER (Hybrid API + Local Fallback)
+ * Delegates to api.js for server operations, with instant local fallback
+ * if the backend server is temporarily unreachable.
  * ==========================================================================
  */
 
 const AUTH_KEYS = {
-  CURRENT_USER: "blogverse_current_user",
-  USERS_LIST: "blogverse_users"
+  THEME: "blogverse_theme",
+  TOKEN: "blogverse_token",
+  USER: "blogverse_current_user",
 };
 
-class AuthManager {
-  constructor() {
-    this.initUsers();
-  }
-
-  initUsers() {
-    if (!localStorage.getItem(AUTH_KEYS.USERS_LIST)) {
-      localStorage.setItem(AUTH_KEYS.USERS_LIST, JSON.stringify(SEED_USERS));
-    }
-  }
-
-  getRegisteredUsers() {
-    try {
-      const users = localStorage.getItem(AUTH_KEYS.USERS_LIST);
-      return users ? JSON.parse(users) : [];
-    } catch (e) {
-      return SEED_USERS;
-    }
-  }
-
+const auth = {
+  /** Returns the cached user object from localStorage */
   getCurrentUser() {
-    try {
-      const user = localStorage.getItem(AUTH_KEYS.CURRENT_USER);
-      return user ? JSON.parse(user) : null;
-    } catch (e) {
-      return null;
-    }
-  }
+    return api.auth.getCurrentUser();
+  },
 
+  /** True if user has an active session */
   isAuthenticated() {
-    return !!this.getCurrentUser();
-  }
+    return api.auth.isAuthenticated();
+  },
 
-  login(email, password) {
-    const users = this.getRegisteredUsers();
-    // In our client-side demo, we match by email
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
-    if (!user) {
-      return { success: false, message: "User with this email not found." };
+  /**
+   * Login — calls the backend API first; falls back to local user store if network offline
+   */
+  async login(email, password) {
+    try {
+      return await api.auth.login(email, password);
+    } catch (error) {
+      // If error is network unreachable, provide local fallback
+      if (error.message && error.message.includes("Cannot connect")) {
+        console.warn("Backend unavailable. Attempting offline authentication:", error.message);
+        return this._localLogin(email, password);
+      }
+      throw error;
     }
+  },
 
-    // Set session
-    localStorage.setItem(AUTH_KEYS.CURRENT_USER, JSON.stringify(user));
-    return { success: true, user };
-  }
-
-  loginAsDemo() {
-    const demoUser = SEED_USERS[0]; // Alex Rivera
-    localStorage.setItem(AUTH_KEYS.CURRENT_USER, JSON.stringify(demoUser));
-    return demoUser;
-  }
-
-  register(newUserData) {
-    const users = this.getRegisteredUsers();
-    const emailExists = users.some(u => u.email.toLowerCase() === newUserData.email.toLowerCase().trim());
-    if (emailExists) {
-      return { success: false, message: "Email is already registered. Please log in." };
+  /**
+   * Demo login — 1-click login as Alex Rivera
+   */
+  async loginAsDemo() {
+    try {
+      return await api.auth.login("alex@example.com", "Demo@1234");
+    } catch (error) {
+      if (error.message && error.message.includes("Cannot connect")) {
+        console.warn("Backend offline. Logging in via offline demo session.");
+        return this._localDemoLogin();
+      }
+      throw error;
     }
+  },
 
-    const newUser = {
+  /**
+   * Register new user account
+   */
+  async register(userData) {
+    try {
+      return await api.auth.register(userData);
+    } catch (error) {
+      if (error.message && error.message.includes("Cannot connect")) {
+        console.warn("Backend offline. Creating local account session.");
+        return this._localRegister(userData);
+      }
+      throw error;
+    }
+  },
+
+  /** Logout */
+  logout() {
+    api.auth.logout();
+  },
+
+  // ── Local Offline Auth Helpers ────────────────────────────────────────────
+  _localLogin(email, password) {
+    const demoUser = typeof window.SEED_USERS !== "undefined"
+      ? window.SEED_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase())
+      : null;
+
+    const user = demoUser || {
       id: "user-" + Date.now(),
-      name: newUserData.name.trim(),
-      email: newUserData.email.toLowerCase().trim(),
-      avatar: newUserData.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=160&q=80",
-      role: newUserData.role || "Creator & Tech Enthusiast",
-      bio: newUserData.bio || "Writer and reader on Blogverse.",
-      joinedDate: new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" })
+      name: email.split("@")[0],
+      email: email,
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80",
+      role: "Member",
+      bio: "Local session",
+      joinedDate: "Today",
     };
 
-    users.push(newUser);
-    localStorage.setItem(AUTH_KEYS.USERS_LIST, JSON.stringify(users));
-    localStorage.setItem(AUTH_KEYS.CURRENT_USER, JSON.stringify(newUser));
+    const token = "offline_jwt_token_" + Date.now();
+    localStorage.setItem(AUTH_KEYS.TOKEN, token);
+    localStorage.setItem(AUTH_KEYS.USER, JSON.stringify(user));
+    return { success: true, token, user };
+  },
 
-    return { success: true, user: newUser };
-  }
+  _localDemoLogin() {
+    const alex = {
+      id: "650000000000000000000001",
+      name: "Alex Rivera",
+      email: "alex@example.com",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80",
+      role: "Senior Frontend Engineer & Designer",
+      bio: "Passionate about building fluid, accessible, and delightful digital experiences.",
+      joinedDate: "Jan 2025",
+    };
+    const token = "offline_jwt_token_alex";
+    localStorage.setItem(AUTH_KEYS.TOKEN, token);
+    localStorage.setItem(AUTH_KEYS.USER, JSON.stringify(alex));
+    return { success: true, token, user: alex };
+  },
 
-  logout() {
-    localStorage.removeItem(AUTH_KEYS.CURRENT_USER);
-  }
-}
+  _localRegister(userData) {
+    const newUser = {
+      id: "user-" + Date.now(),
+      name: userData.name,
+      email: userData.email,
+      avatar: userData.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80",
+      role: userData.role || "Creator",
+      bio: userData.bio || "Member",
+      joinedDate: "Today",
+    };
+    const token = "offline_jwt_token_" + Date.now();
+    localStorage.setItem(AUTH_KEYS.TOKEN, token);
+    localStorage.setItem(AUTH_KEYS.USER, JSON.stringify(newUser));
+    return { success: true, token, user: newUser };
+  },
+};
 
-const auth = new AuthManager();
+// Expose globally
+window.auth = auth;

@@ -1,13 +1,17 @@
 /**
  * ==========================================================================
  * BLOGVERSE - HOME PAGE LOGIC
- * Dynamic feed rendering, category filters, instant search, and sorting
+ * Dynamic feed rendering, category filters, instant search, and sorting.
+ * Updated to use async API calls.
  * ==========================================================================
  */
+
+const CATEGORIES = ["All", "Tech & AI", "Web Dev", "Design Systems", "Productivity", "Career"];
 
 let currentCategory = "All";
 let searchQuery = "";
 let currentSort = "latest";
+let searchDebounceTimer = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   initCategoryTabs();
@@ -42,11 +46,12 @@ function initSearchAndSort() {
 
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
-      searchQuery = e.target.value.toLowerCase().trim();
-      renderFeed();
+      searchQuery = e.target.value.trim();
+      // Debounce search to avoid API calls on every keystroke
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => renderFeed(), 400);
     });
 
-    // Global keyboard shortcut: Cmd+K / Ctrl+K
     window.addEventListener("keydown", (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -64,108 +69,116 @@ function initSearchAndSort() {
   }
 }
 
-function renderFeed() {
-  const allPosts = storage.getAllPosts().filter(p => p.status !== "draft");
-  
-  // Filter by category
-  let filtered = allPosts;
-  if (currentCategory !== "All") {
-    filtered = filtered.filter(p => p.category === currentCategory);
-  }
-
-  // Filter by search query
-  if (searchQuery) {
-    filtered = filtered.filter(p => {
-      const matchTitle = p.title.toLowerCase().includes(searchQuery);
-      const matchExcerpt = p.excerpt.toLowerCase().includes(searchQuery);
-      const matchTags = p.tags && p.tags.some(t => t.toLowerCase().includes(searchQuery));
-      const matchAuthor = p.author && p.author.name.toLowerCase().includes(searchQuery);
-      return matchTitle || matchExcerpt || matchTags || matchAuthor;
-    });
-  }
-
-  // Sort
-  if (currentSort === "latest") {
-    filtered.sort((a, b) => new Date(b.publishedDate || 0) - new Date(a.publishedDate || 0));
-  } else if (currentSort === "views") {
-    filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
-  } else if (currentSort === "likes") {
-    filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-  }
-
-  // Render Featured Post (only if not searching/filtering specific categories, or pick the first matching)
-  renderFeaturedPost(allPosts);
-
-  // Render Grid
+async function renderFeed() {
   const gridContainer = document.getElementById("blog-grid");
   const resultCount = document.getElementById("result-count");
 
-  if (resultCount) {
-    resultCount.textContent = `Showing ${filtered.length} article${filtered.length === 1 ? "" : "s"}`;
-  }
-
-  if (!gridContainer) return;
-
-  if (filtered.length === 0) {
+  // Show loading skeleton
+  if (gridContainer) {
     gridContainer.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">🔍</div>
-        <h3>No articles found</h3>
-        <p>Try refining your search terms or selecting a different category.</p>
-        <button class="btn btn-secondary btn-sm" style="margin-top: 1rem;" onclick="resetFilters()">Reset Filters</button>
+      <div class="loading-skeleton" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-dim);">
+        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+        Loading articles...
       </div>
     `;
-    return;
   }
 
-  gridContainer.innerHTML = filtered.map(post => {
-    const isBookmarked = storage.isPostBookmarked(post.id);
-    const authorName = post.author ? post.author.name : "Anonymous";
-    const authorAvatar = post.author ? post.author.avatar : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
+  try {
+    // Map UI sort values to API sort params
+    const sortMap = { latest: "newest", views: "mostViewed", likes: "mostLiked" };
 
-    return `
-      <article class="blog-card animate-fade-in" data-id="${post.id}">
-        <div class="card-img-wrap">
-          <img src="${post.coverImage}" alt="${post.title}" class="card-img" loading="lazy">
-          <span class="badge card-category-floating">${post.category}</span>
+    const params = {
+      sort: sortMap[currentSort] || "newest",
+      category: currentCategory !== "All" ? currentCategory : undefined,
+      search: searchQuery || undefined,
+    };
+
+    const data = await storage.getAllPosts(params);
+    const allPosts = data;
+
+    // Render Featured Post (only if not searching)
+    renderFeaturedPost(allPosts);
+
+    if (resultCount) {
+      resultCount.textContent = `Showing ${allPosts.length} article${allPosts.length === 1 ? "" : "s"}`;
+    }
+
+    if (!gridContainer) return;
+
+    if (allPosts.length === 0) {
+      gridContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h3>No articles found</h3>
+          <p>Try refining your search terms or selecting a different category.</p>
+          <button class="btn btn-secondary btn-sm" style="margin-top: 1rem;" onclick="resetFilters()">Reset Filters</button>
         </div>
-        <div class="card-body">
-          <div class="card-meta-top">
-            <span><i class="fa-regular fa-calendar"></i> ${post.publishedDate}</span>
-            <span>•</span>
-            <span><i class="fa-regular fa-clock"></i> ${post.readTime || "4 min read"}</span>
+      `;
+      return;
+    }
+
+    gridContainer.innerHTML = allPosts.map(post => {
+      const authorName = post.author ? post.author.name : "Anonymous";
+      const authorAvatar = post.author
+        ? post.author.avatar
+        : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
+
+      return `
+        <article class="blog-card animate-fade-in" data-id="${post._id}">
+          <div class="card-img-wrap">
+            <img src="${post.coverImage}" alt="${post.title}" class="card-img" loading="lazy">
+            <span class="badge card-category-floating">${post.category}</span>
           </div>
-          <h3 class="card-title">
-            <a href="post.html?id=${post.id}">${post.title}</a>
-          </h3>
-          <p class="card-excerpt">${post.excerpt}</p>
-          <div class="card-footer">
-            <div class="author-meta">
-              <img src="${authorAvatar}" alt="${authorName}" class="author-thumb">
-              <div>
-                <div class="author-name">${authorName}</div>
+          <div class="card-body">
+            <div class="card-meta-top">
+              <span><i class="fa-regular fa-calendar"></i> ${post.publishedDate}</span>
+              <span>•</span>
+              <span><i class="fa-regular fa-clock"></i> ${post.readTime || "4 min read"}</span>
+            </div>
+            <h3 class="card-title">
+              <a href="post.html?id=${post._id}">${post.title}</a>
+            </h3>
+            <p class="card-excerpt">${post.excerpt}</p>
+            <div class="card-footer">
+              <div class="author-meta">
+                <img src="${authorAvatar}" alt="${authorName}" class="author-thumb">
+                <div>
+                  <div class="author-name">${authorName}</div>
+                </div>
+              </div>
+              <div class="card-stats">
+                <span class="card-stat-item" title="Views">
+                  <i class="fa-regular fa-eye"></i> ${post.views || 0}
+                </span>
+                <span class="card-stat-item" title="Likes">
+                  <i class="fa-regular fa-heart"></i> ${(post.likes || []).length}
+                </span>
               </div>
             </div>
-            <div class="card-stats">
-              <span class="card-stat-item" title="Views">
-                <i class="fa-regular fa-eye"></i> ${post.views || 0}
-              </span>
-              <span class="card-stat-item" title="Likes">
-                <i class="fa-regular fa-heart"></i> ${post.likes || 0}
-              </span>
-            </div>
           </div>
+        </article>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("Feed load error:", error);
+    if (gridContainer) {
+      gridContainer.innerHTML = `
+        <div class="empty-state" style="grid-column: 1/-1;">
+          <div class="empty-icon">⚠️</div>
+          <h3>Failed to load articles</h3>
+          <p>${error.message || "Please check your connection and try again."}</p>
+          <button class="btn btn-primary btn-sm" style="margin-top: 1rem;" onclick="renderFeed()">Retry</button>
         </div>
-      </article>
-    `;
-  }).join("");
+      `;
+    }
+  }
 }
 
 function renderFeaturedPost(allPosts) {
   const container = document.getElementById("featured-post-container");
   if (!container) return;
 
-  // Don't show hero featured if user is actively searching with a query
   if (searchQuery) {
     container.style.display = "none";
     return;
@@ -179,7 +192,9 @@ function renderFeaturedPost(allPosts) {
   }
 
   const authorName = featured.author ? featured.author.name : "Featured Creator";
-  const authorAvatar = featured.author ? featured.author.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80";
+  const authorAvatar = featured.author
+    ? featured.author.avatar
+    : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80";
 
   container.innerHTML = `
     <div class="featured-post-card animate-fade-in">
@@ -192,7 +207,7 @@ function renderFeaturedPost(allPosts) {
           <span class="badge">${featured.category}</span>
         </div>
         <h2 class="featured-title">
-          <a href="post.html?id=${featured.id}">${featured.title}</a>
+          <a href="post.html?id=${featured._id}">${featured.title}</a>
         </h2>
         <p class="featured-excerpt">${featured.excerpt}</p>
         <div class="card-footer" style="padding-top: 1.25rem;">
@@ -203,7 +218,7 @@ function renderFeaturedPost(allPosts) {
               <div class="card-read-time">${featured.publishedDate} • ${featured.readTime || "5 min read"}</div>
             </div>
           </div>
-          <a href="post.html?id=${featured.id}" class="btn btn-primary btn-sm">
+          <a href="post.html?id=${featured._id}" class="btn btn-primary btn-sm">
             <span>Read Story</span>
             <i class="fa-solid fa-arrow-right"></i>
           </a>
@@ -221,3 +236,5 @@ function resetFilters() {
   initCategoryTabs();
   renderFeed();
 }
+
+window.resetFilters = resetFilters;
